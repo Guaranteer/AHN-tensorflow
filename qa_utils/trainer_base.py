@@ -1,4 +1,4 @@
-from base_feed import Batcher
+from data_feed import Batcher
 import wups
 import time
 import tensorflow as tf
@@ -73,7 +73,7 @@ class Trainer(object):
             predict_status,top_index, conds = \
                 sess.run([model.predict_status,model.top_index,model.cond_list], feed_dict = batch_data)
 
-            print(top_index)
+            # print(top_index)
             for i in range(len(type_vec)):
                 type_count[type_vec[i]] += 1
                 correct_count[type_vec[i]] += predict_status[i]
@@ -87,7 +87,7 @@ class Trainer(object):
                 wups_count2[type_vec[i]] += wups_value2
 
 
-        print(conds)
+        # print(conds)
         print('****************************')
         acc = correct_count.sum() / type_count.sum()
         wup_acc = wups_count.sum() / type_count.sum()
@@ -123,15 +123,9 @@ class Trainer(object):
         self.model_saver = tf.train.Saver()
 
         # training
-        with open('./model_list.json','r') as fj:
-            saved_model = json.load(fj)['best_model']
+        init_proc = tf.global_variables_initializer()
+        sess.run(init_proc)
 
-        if saved_model == "":
-            init_proc = tf.global_variables_initializer()
-            sess.run(init_proc)
-        else:
-            print('restore the mest model')
-            self.model_saver.restore(sess, saved_model)
 
         best_epoch_acc = 0
         best_epoch_id = 0

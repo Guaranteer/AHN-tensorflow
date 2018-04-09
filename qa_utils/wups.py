@@ -76,5 +76,9 @@ def compute_wups(input_gt, input_pred, thresh):
     # print 'final score:', final_score
     return final_score
 
+
+
 # tt = compute_wups(['one'],['ten'],0)
 # print(tt)
+
+# print(compute_wups(['apple'],['pig'],0.9))

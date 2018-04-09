@@ -37,9 +37,9 @@ data_params = {
     'ref_dim':300,
 
     'word2vec': './word2vec/word2vec.bin',
-    'database':'./actNet200-V1-3.pkl',
-    'question':'./question.json',
-    'answer':'./answer.json',
+    'database':'./caption/actNet200-V1-3.pkl',
+    'question':'./qg/question.json',
+    'answer':'./qg/answer.json',
     'real_train_proposals':'./captions/train.json',
     'real_val_proposals':'./captions/val_1.json',
     'real_test_proposals': './captions/val_2.json',

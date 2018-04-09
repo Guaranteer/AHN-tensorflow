@@ -34,7 +34,7 @@ class Trainer(object):
         self.model.build_model()
         self.model_path = os.path.join(self.train_params['cache_dir'])
         if not os.path.exists(self.model_path):
-            print 'create path: ', self.model_path
+            print('create path: ', self.model_path)
             os.makedirs(self.model_path)
 
         self.last_checkpoint = None
@@ -164,12 +164,12 @@ class Trainer(object):
                     print ('Epoch %d, Batch %d, loss = %.4f, %.3f seconds/batch' % (i_epoch, i_batch, train_loss, (t2-t1)/self.train_params['display_batch_interval']))
                     #print train_ans
                     #print [index2word[i] for i in train_ans[0]]
-                    print 'learning_rate: ', learning_rate
-                    print 'ground_a:    ', ground_a
-                    print 'generated:    ', generated_sentence
-                    print 'wups_value:  ', wups_value
-                    print 'wups_value2: ', wups_value2
-                    print 'Bleu1 value: ', bleu1_value
+                    print('learning_rate: ', learning_rate)
+                    print('ground_a:    ', ground_a)
+                    print('generated:    ', generated_sentence)
+                    print('wups_value:  ', wups_value)
+                    print('wups_value2: ', wups_value2)
+                    print('Bleu1 value: ', bleu1_value)
                     t1 = t2
 
 
@@ -284,7 +284,7 @@ class Trainer(object):
 
             i_batch += 1
             if i_batch % 100 == 0:
-                print i_batch
+                print(i_batch)
 
         print('****************************')
         wup_acc = wups_count.sum() / type_count.sum()
