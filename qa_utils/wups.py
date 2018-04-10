@@ -65,28 +65,29 @@ def compute_wups(input_gt, input_pred, thresh):
     else:
         measure = lambda x, y: wup_measure(x, y, thresh)
 
+
+    if len(input_gt) ==0 or len(input_pred) == 0:
+        return  0
+
     final_score_gt = 0
     for word_gt in input_gt:
-        print(word_gt)
         max_cur = 0
         for word_pred in input_pred:
             value = measure(word_gt,word_pred)
             if value > max_cur:
                 max_cur = value
-        print(max_cur)
         final_score_gt += max_cur
     final_score_gt /= len(input_gt)
 
     final_score_pred = 0
     for word_pred in input_pred:
-        print(word_pred)
         max_cur = 0
         for word_gt in input_gt:
             value = measure(word_gt,word_pred)
             if value > max_cur:
                 max_cur = value
-        print(max_cur)
         final_score_pred += max_cur
+
     final_score_pred /= len(input_pred)
     final_score = min(final_score_gt,final_score_pred)
 

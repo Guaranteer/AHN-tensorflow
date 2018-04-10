@@ -44,6 +44,9 @@ class Model(object):
         self.ans_vec = tf.placeholder(tf.float32, [None, self.max_n_a_words, self.input_ques_dim])
         self.batch_size = tf.placeholder(tf.int32, [])
         self.is_training = tf.placeholder(tf.bool)
+        self.reward = tf.placeholder(tf.float32, [None])
+
+
         
         self.Wsi = tf.get_variable('Wsi', shape=[self.input_frame_dim, self.ref_dim], dtype=tf.float32,
                               initializer=tf.contrib.layers.xavier_initializer())
@@ -114,7 +117,7 @@ class Model(object):
 
 
         # decoder
-        ######
+
         # output -> first_atten
         # self.decoder_cell = tf.contrib.rnn.BasicLSTMCell(self.decode_dim)
         self.decoder_cell = tf.contrib.rnn.GRUCell(self.decode_dim)
@@ -225,6 +228,7 @@ class Model(object):
                     answer_train.append(max_prob_word)
 
                     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logit_words)
+                    cross_entropy = cross_entropy * self.reward
                     cross_entropy = cross_entropy * self.y_mask[:,i]
                     current_loss = tf.reduce_sum(cross_entropy)
                     loss = loss + current_loss
@@ -286,6 +290,7 @@ class Model(object):
                     answer_test.append(max_prob_word)
 
                     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=onehot_labels, logits=logit_words)
+                    cross_entropy = cross_entropy * self.reward
                     cross_entropy = cross_entropy * self.y_mask[:,i]
                     current_loss = tf.reduce_sum(cross_entropy)
                     loss = loss + current_loss

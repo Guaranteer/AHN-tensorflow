@@ -76,17 +76,17 @@ embedding = list()
 word2index = dict()
 index2word = dict()
 ind = 2
-word2index[0] = '<UNKNOWN>'
-word2index[1] = '<PAD>'
-index2word['<UNKNOWN>'] = 0
-index2word['<PAD>'] = 1
+index2word[0] = '<UNKNOWN>'
+index2word[1] = '<PAD>'
+word2index['<UNKNOWN>'] = 0
+word2index['<PAD>'] = 1
 embedding.append(0.6*np.random.rand(300)-0.3)
 embedding.append(0.6*np.random.rand(300)-0.3)
 for key in vocal.keys():
     if key in wv:
         embedding.append(wv[key])
         word2index[key] = ind
-
+        index2word[ind] = key
         ind += 1
     else:
         print(key)

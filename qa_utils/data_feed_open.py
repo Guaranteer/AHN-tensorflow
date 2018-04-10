@@ -67,11 +67,9 @@ class Batcher(object):
             ans_n = np.zeros((batch_size), dtype=int)
 
             type_vec = np.zeros((batch_size), dtype=int)
-
             for i in range(batch_size):
                 curr_data_index = self.data_index[self.next_idx + i]
-                vid = self.key_file[curr_data_index][0][2:].encode('utf-8')
-
+                vid = self.key_file[curr_data_index][0][2:]
                 if not os.path.exists(self.feature_path + '/feat/%s.h5' % vid):
                     continue
                 with h5py.File(self.feature_path + '/feat/%s.h5' % vid, 'r') as hf:
@@ -94,7 +92,7 @@ class Batcher(object):
                 img_frame_n[i] = n_frames
 
                 # question
-                ques = self.key_file[curr_data_index][2].encode('utf-8').split()
+                ques = self.key_file[curr_data_index][2].split()
                 ques = [word.lower() for word in ques if word not in stopwords and word != '']
                 ques = [self.word_dict[word] if word in self.word_dict else 0 for word in ques]
                 vector = self.all_word_vec[ques]
@@ -103,10 +101,10 @@ class Batcher(object):
                 ques_vecs[i, :ques_n[i], :] = vector[:ques_n[i], :]
 
                 # answer
-                ans = self.key_file[curr_data_index][3].encode('utf-8').split()
+                ans = self.key_file[curr_data_index][3].split()
                 ans = [word.lower() for word in ans if word not in stopwords and word != '' and word != 'EOS']
                 ans += ['EOS']
-                ans = [self.word_dict[word] if word in self.word_dict else 0 for word in ans]
+                ans = [self.word_dict[word] for word in ans if word in self.word_dict]
                 if len(ans) > self.max_a_words:
                     ans = ans[:self.max_a_words-1] +  ans[-1:]
                 vector = self.all_word_vec[ans]

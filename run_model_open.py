@@ -9,7 +9,7 @@ train_params = {
     'lr_decay_rate': 0.8,
     'max_epoches': 1000,
     'early_stopping': 5,
-    'cache_dir': './model/base/',
+    'cache_dir': './model/base2/',
     'display_batch_interval': 20,
     'summary_interval': 10,
     'evaluate_interval': 5,

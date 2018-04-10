@@ -98,7 +98,7 @@ class Trainer(object):
                     break
 
                 batch_data = dict()
-
+                # print(ans_word,ques_word)
                 batch_data[self.model.y] = ans_word
                 batch_data[self.model.input_x] = img_frame_vecs
                 batch_data[self.model.input_x_len] = img_frame_n
@@ -113,27 +113,28 @@ class Trainer(object):
                     row[:ans_n[ind]] = 1
                 batch_data[self.model.y_mask] = mask_matrix
 
-                _, train_loss, train_ans, learning_rate = sess.run([train_proc, self.model.train_loss, self.model.answer_word_train, learning_rates], \
+                train_ans, learning_rate = sess.run([self.model.answer_word_train, learning_rates], \
                                     feed_dict=batch_data)
                 train_ans = np.transpose(np.array(train_ans), (1,0))
 
                 # get word and calculate WUPS
+                reward = np.ones(len(ans_vecs), dtype=float)
                 for i in range(len(type_vec)):
                     type_count[type_vec[i]] += 1
                     ground_a = list()
                     for l in range(self.data_params['max_n_a_words']):
                         word = ans_word[i][l]
-                        ground_a.append(self.index2word[word])
                         if self.index2word[word] == 'EOS':
                             break
+                        ground_a.append(self.index2word[word])
 
 
                     generate_a = list()
                     for l in range(self.data_params['max_n_a_words']):
                         word=train_ans[i][l]
-                        generate_a.append(self.index2word[word])
                         if self.index2word[word] == 'EOS':
                             break
+                        generate_a.append(self.index2word[word])
 
 
 
@@ -144,6 +145,11 @@ class Trainer(object):
                     wups_count[type_vec[i]] += wups_value
                     wups_count2[type_vec[i]] += wups_value2
                     bleu1_count[type_vec[i]] += bleu1_value
+
+                    reward[i] = wups_value2
+
+                batch_data[self.model.reward] = reward
+                _, train_loss = sess.run([train_proc, self.model.train_loss], feed_dict=batch_data)
 
 
                 # display batch info
@@ -235,7 +241,7 @@ class Trainer(object):
                 row[:ans_n[ind]] = 1
             batch_data[model.y_mask] = mask_matrix
 
-            test_loss, test_ans = sess.run([self.model.test_loss, self.model.answer_word_test], feed_dict=batch_data)
+            test_ans = sess.run(self.model.answer_word_test, feed_dict=batch_data)
             test_ans = np.transpose(np.array(test_ans), (1,0))
 
             for i in range(len(type_vec)):
@@ -243,18 +249,17 @@ class Trainer(object):
                 ground_a = list()
                 for l in range(self.data_params['max_n_a_words']):
                     word = ans_word[i][l]
-                    ground_a.append(self.index2word[word])
                     if self.index2word[word] == 'EOS':
                         break
+                    ground_a.append(self.index2word[word])
 
 
                 generate_a = list()
                 for l in range(self.data_params['max_n_a_words']):
                     word = test_ans[i][l]
-                    generate_a.append(self.index2word[word])
                     if self.index2word[word] == 'EOS':
                         break
-
+                    generate_a.append(self.index2word[word])
 
                 wups_value = wups.compute_wups(ground_a, generate_a, 0.0)
                 wups_value2 = wups.compute_wups(ground_a, generate_a, 0.9)
