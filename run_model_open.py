@@ -45,9 +45,15 @@ data_params = {
     'word_embedding': './qg/embedding.pkl',
     'word2index': './qg/word2index.pkl',
     'index2word': './qg/index2word.pkl',
+<<<<<<< HEAD
     'train_json': './qg/train_clean1.json',
     'val_json': './qg/val_clean1.json',
     'test_json': './qg/test_clean1.json',
+=======
+    'train_json': './qg/train_clean.json',
+    'val_json': './qg/val_clean.json',
+    'test_json': './qg/test_clean.json',
+>>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
     'feature_path':'./tsn_score/'
 }
 
