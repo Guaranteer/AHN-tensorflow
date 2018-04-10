@@ -117,11 +117,7 @@ class Model(object):
         ######
         # output -> first_atten
         # self.decoder_cell = tf.contrib.rnn.BasicLSTMCell(self.decode_dim)
-<<<<<<< HEAD
         self.decoder_cell = tf.contrib.rnn.GRUCell(self.decode_dim)
-=======
-        # self.decoder_cell = tf.contrib.rnn.GRUCell(self.decode_dim)
->>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
 
         with tf.variable_scope('linear'):
             decoder_input_W = tf.get_variable('w', shape=[concat_output.shape[1], self.decode_dim], dtype=tf.float32, initializer=tf.contrib.layers.xavier_initializer()) # initializer=tf.random_normal_initializer(stddev=0.03))
@@ -140,15 +136,9 @@ class Model(object):
         with tf.variable_scope('decoder_attention'):
             self.attention_w_q = tf.get_variable('attention_w_q', shape=[self.lstm_dim, self.attention_dim], dtype=tf.float32,
                                   initializer=tf.contrib.layers.xavier_initializer())
-<<<<<<< HEAD
             self.attention_w_x = tf.get_variable('attention_w_x', shape=[self.lstm_dim, self.attention_dim], dtype=tf.float32,
                                   initializer=tf.contrib.layers.xavier_initializer())
             self.attention_w_h = tf.get_variable('attention_w_h', shape=[self.decode_dim,self.attention_dim], dtype=tf.float32,
-=======
-            self.attention_w_x = tf.get_variable('attention_w_x', shape=[self.decode_dim, self.attention_dim], dtype=tf.float32,
-                                  initializer=tf.contrib.layers.xavier_initializer())
-            self.attention_w_h = tf.get_variable('attention_w_h', shape=[self.lstm_dim,self.attention_dim], dtype=tf.float32,
->>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
                                   initializer=tf.contrib.layers.xavier_initializer())
             self.attention_b = tf.get_variable('attention_b', shape=[self.attention_dim], dtype=tf.float32,
                                 initializer=tf.contrib.layers.xavier_initializer())
@@ -160,15 +150,9 @@ class Model(object):
         with tf.variable_scope('decoder'):
             self.decoder_r = tf.get_variable('decoder_r', shape=[self.decode_dim*3, self.decode_dim], dtype=tf.float32,
                                   initializer=tf.contrib.layers.xavier_initializer())
-<<<<<<< HEAD
             self.decoder_z = tf.get_variable('decoder_z', shape=[self.decode_dim*3, self.decode_dim], dtype=tf.float32,
                                   initializer=tf.contrib.layers.xavier_initializer())
             self.decoder_w = tf.get_variable('decoder_w', shape=[self.decode_dim*3,self.decode_dim], dtype=tf.float32,
-=======
-            self.decoder_z = tf.get_variable('decoder_z', shape=[self.decode_dim*3, self.attention_dim], dtype=tf.float32,
-                                  initializer=tf.contrib.layers.xavier_initializer())
-            self.decoder_w = tf.get_variable('decoder_w', shape=[self.decode_dim*3,self.attention_dim], dtype=tf.float32,
->>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
                                   initializer=tf.contrib.layers.xavier_initializer())
 
 
@@ -194,7 +178,7 @@ class Model(object):
     def generate_answer_on_training(self):
         with tf.variable_scope("decoder"):
             answer_train = []
-            decoder_state = tf.constant(value=0.0,shape=[self.batch_size,self.decode_dim])
+            decoder_state = self.decoder_cell.zero_state(self.batch_size, tf.float32)
             loss = 0.0
 
             with tf.variable_scope("lstm") as scope:
@@ -221,17 +205,10 @@ class Model(object):
 
                     # decoder : GRU with attention
                     decoder_input = tf.concat([decoder_state,attention_decoder,current_emb],axis=1)
-<<<<<<< HEAD
                     decoder_r_t = tf.nn.sigmoid(tf.matmul(decoder_input, self.decoder_r))
                     decoder_z_t = tf.nn.sigmoid(tf.matmul(decoder_input, self.decoder_z))
                     decoder_middle = tf.concat([tf.multiply(decoder_r_t,decoder_state),tf.multiply(decoder_r_t,attention_decoder),current_emb],axis=1)
                     decoder_state_ = tf.tanh(tf.matmul(decoder_middle, self.decoder_w))
-=======
-                    decoder_r_t = tf.nn.sigmoid(tf.matmul(self.decoder_r, decoder_input))
-                    decoder_z_t = tf.nn.sigmoid(tf.matmul(self.decoder_z, decoder_input))
-                    decoder_middle = tf.concat([tf.multiply(decoder_r_t,decoder_state),tf.multiply(decoder_r_t,attention_decoder,current_emb)],axis=1)
-                    decoder_state_ = tf.tanh(tf.matmul(self.decoder_w,decoder_middle))
->>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
                     decoder_state = tf.multiply((1-decoder_z_t),decoder_state) + tf.multiply(decoder_z_t,decoder_state_)
 
                     output = decoder_state
@@ -258,7 +235,7 @@ class Model(object):
     def generate_answer_on_testing(self):
         with tf.variable_scope("decoder"):
             answer_test = []
-            decoder_state = tf.constant(value=0.0, shape=[self.batch_size, self.decode_dim])
+            decoder_state = self.decoder_cell.zero_state(self.batch_size, tf.float32)
             loss = 0.0
 
             with tf.variable_scope("lstm") as scope:
@@ -279,33 +256,20 @@ class Model(object):
                                               + utils.tensor_matmul(tiled_q_last_state, self.attention_w_q)
                                               + utils.tensor_matmul(tiled_decoder_state_h, self.attention_w_h)
                                               + self.attention_b)
-<<<<<<< HEAD
                     attention_score = tf.nn.softmax(
                         tf.squeeze(utils.tensor_matmul(attention_input, self.attention_a), axis=[2]))
                     attention_output = tf.reduce_sum(
                         tf.multiply(self.v_first_lstm_output, tf.expand_dims(attention_score, 2)), 1)
-=======
-                    attention_score = tf.nn.softmax(tf.squeeze(utils.tensor_matmul(attention_input, self.attention_a), axis=[2]))
-                    attention_output = tf.reduce_sum(tf.multiply(self.v_first_lstm_output, tf.expand_dims(attention_score, 2)), 1)
->>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
                     attention_decoder = tf.matmul(attention_output, self.attention_to_decoder)
 
                     # decoder : GRU with attention
                     decoder_input = tf.concat([decoder_state, attention_decoder, current_emb], axis=1)
-<<<<<<< HEAD
                     decoder_r_t = tf.nn.sigmoid(tf.matmul(decoder_input, self.decoder_r))
                     decoder_z_t = tf.nn.sigmoid(tf.matmul(decoder_input, self.decoder_z))
                     decoder_middle = tf.concat(
                         [tf.multiply(decoder_r_t, decoder_state), tf.multiply(decoder_r_t, attention_decoder),
                          current_emb], axis=1)
                     decoder_state_ = tf.tanh(tf.matmul(decoder_middle, self.decoder_w))
-=======
-                    decoder_r_t = tf.nn.sigmoid(tf.matmul(self.decoder_r, decoder_input))
-                    decoder_z_t = tf.nn.sigmoid(tf.matmul(self.decoder_z, decoder_input))
-                    decoder_middle = tf.concat([tf.multiply(decoder_r_t, decoder_state),
-                                                tf.multiply(decoder_r_t, attention_decoder, current_emb)], axis=1)
-                    decoder_state_ = tf.tanh(tf.matmul(self.decoder_w, decoder_middle))
->>>>>>> 15a0c9bc304f527f1c9f6d601121752501c2fecf
                     decoder_state = tf.multiply((1 - decoder_z_t), decoder_state) + tf.multiply(decoder_z_t,
                                                                                                 decoder_state_)
 
