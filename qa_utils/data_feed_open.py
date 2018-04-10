@@ -1,14 +1,14 @@
 import json
-import cPickle as pkl
+import pickle as pkl
 import numpy as np
 import random
 import os
 import h5py
 
-stopwords = ['.']
+stopwords = ['.','?']
 
 def load_file(filename):
-    with open(filename) as f1:
+    with open(filename,'rb') as f1:
         return pkl.load(f1)
 
 def load_json(filename):
@@ -19,28 +19,23 @@ class Batcher(object):
     def __init__(self, params, data_file, mode, reshuffle=False):
         # general
         self.reshuffle = reshuffle
-        self.dataset = params['dataset']
         self.next_idx = 0
-        self.feature_path = params['feat_path']
-        self.flow_path = params['flow_path']
+        self.feature_path = params['feature_path']
         self.params = params
         self.max_batch_size = params['batch_size']
 
         # dataset
-        self.all_word_vec = np.load(params['wordvec_path'])
-        self.word_dict = load_file(params['word_dict_path'])
+        self.all_word_vec = load_file(params['word_embedding'])
+        self.word_dict = load_file(params['word2index'])
         self.key_file = load_json(data_file)
 
         # frame / motion / question
-        self.use_frame = params['use_frame']
-        if self.use_frame:
-            self.max_n_frames = params['max_n_frames']
-            self.v_dim = params['input_video_dim']
+
+        self.max_n_frames = params['max_n_frames']
+        self.v_dim = params['input_video_dim']
         self.max_q_words = params['max_n_q_words']
         self.max_a_words = params['max_n_a_words']
-        self.use_qvec = params['use_qvec']
-        if self.use_qvec:
-            self.q_dim = params['input_ques_dim']
+        self.q_dim = params['input_ques_dim']
 
         # load data & initialization
         self.data_index = list(range(len(self.key_file)))
@@ -64,11 +59,11 @@ class Batcher(object):
             img_frame_n = np.zeros((batch_size), dtype=int)
 
             ques_vecs = np.zeros((batch_size, self.max_q_words, self.q_dim), dtype=float)
-            ques_word = np.zeros((batch_size, self.max_q_words), dtype=int)
+            ques_word = np.ones((batch_size, self.max_q_words), dtype=int)
             ques_n = np.zeros((batch_size), dtype=int)
 
             ans_vecs = np.zeros((batch_size, self.max_a_words, self.q_dim), dtype=float)
-            ans_word = np.zeros((batch_size, self.max_a_words), dtype=int)
+            ans_word = np.ones((batch_size, self.max_a_words), dtype=int)
             ans_n = np.zeros((batch_size), dtype=int)
 
             type_vec = np.zeros((batch_size), dtype=int)
@@ -76,25 +71,28 @@ class Batcher(object):
             for i in range(batch_size):
                 curr_data_index = self.data_index[self.next_idx + i]
                 vid = self.key_file[curr_data_index][0][2:].encode('utf-8')
-                if self.use_frame:
-                    if not os.path.exists(self.feature_path + '%s.h5' % vid):
-                        continue
-                    with h5py.File(self.feature_path + '%s.h5' % vid, 'r') as hf:
-                        fg = np.asarray(hf['fg'])
-                        bg = np.asarray(hf['bg'])
-                        feat = np.hstack([fg, bg])
-                    with h5py.File(self.flow_path + '%s.h5' % vid, 'r') as hf:
-                        fg2 = np.asarray(hf['fg'])
-                        bg2 = np.asarray(hf['bg'])
-                        feat2 = np.hstack([fg2, bg2])
-                    feat = np.hstack([feat, feat2]) # [frame, 404]
-                    if len(feat) > self.max_n_frames:
-                        index = np.linspace(0, len(feat)-1, self.max_n_frames).astype(np.int32)
-                        feat = feat[index, :]
-                    n_frames = len(feat)
-                    img_frame_vecs[i, :n_frames, :] = feat
-                    img_frame_n[i] = n_frames
-                
+
+                if not os.path.exists(self.feature_path + '/feat/%s.h5' % vid):
+                    continue
+                with h5py.File(self.feature_path + '/feat/%s.h5' % vid, 'r') as hf:
+                    fg = np.asarray(hf['fg'])
+                    bg = np.asarray(hf['bg'])
+                    feat = np.hstack([fg, bg])
+                with h5py.File(self.feature_path + '/flow/%s.h5' % vid, 'r') as hf:
+                    fg2 = np.asarray(hf['fg'])
+                    bg2 = np.asarray(hf['bg'])
+                    feat2 = np.hstack([fg2, bg2])
+                feat = feat + feat2
+
+                inds = np.floor(np.arange(0, len(feat) - 0.1, len(feat) / self.params["max_n_frames"])).astype(int)
+                frames = feat[inds, :]
+                frames = np.vstack(frames)
+                if len(frames) > self.max_n_frames:
+                    frames = frames[:self.max_n_frames]
+                n_frames = len(frames)
+                img_frame_vecs[i, :n_frames, :] = frames
+                img_frame_n[i] = n_frames
+
                 # question
                 ques = self.key_file[curr_data_index][2].encode('utf-8').split()
                 ques = [word.lower() for word in ques if word not in stopwords and word != '']
