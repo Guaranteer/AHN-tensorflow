@@ -124,17 +124,19 @@ class Trainer(object):
                     ground_a = list()
                     for l in range(self.data_params['max_n_a_words']):
                         word = ans_word[i][l]
+                        ground_a.append(self.index2word[word])
                         if self.index2word[word] == 'EOS':
                             break
-                        ground_a.append(self.index2word[word])
+                        
 
 
                     generate_a = list()
                     for l in range(self.data_params['max_n_a_words']):
                         word=train_ans[i][l]
+                        generate_a.append(self.index2word[word])
                         if self.index2word[word] == 'EOS':
                             break
-                        generate_a.append(self.index2word[word])
+                        
 
 
 
@@ -249,17 +251,19 @@ class Trainer(object):
                 ground_a = list()
                 for l in range(self.data_params['max_n_a_words']):
                     word = ans_word[i][l]
+                    ground_a.append(self.index2word[word])
                     if self.index2word[word] == 'EOS':
                         break
-                    ground_a.append(self.index2word[word])
+                    
 
 
                 generate_a = list()
                 for l in range(self.data_params['max_n_a_words']):
                     word = test_ans[i][l]
+                    generate_a.append(self.index2word[word])
                     if self.index2word[word] == 'EOS':
                         break
-                    generate_a.append(self.index2word[word])
+                    
 
                 wups_value = wups.compute_wups(ground_a, generate_a, 0.0)
                 wups_value2 = wups.compute_wups(ground_a, generate_a, 0.9)

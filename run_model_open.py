@@ -17,8 +17,8 @@ train_params = {
     'epoch_reshuffle': True
 }
 model_params = {
-    'lstm_dim': 384,
-    'second_lstm_dim':384,
+    'lstm_dim': 512,
+    'second_lstm_dim':512,
     'ref_dim':300,
     'attention_dim': 256,
     'regularization_beta': 1e-7,
