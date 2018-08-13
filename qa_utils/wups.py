@@ -46,7 +46,7 @@ def wup_measure(a, b, similarity_threshold = 0.7, debug = False):
     if debug: print ('Global', global_max)
 
     # we need to use the semantic fields and therefore we downweight
-    # unless the score is high which indicates both are synonyms
+    # unless the score is high which indicates both are syno    nyms
     if global_max < similarity_threshold:
         interp_weight = 0.1
     else:
@@ -65,39 +65,20 @@ def compute_wups(input_gt, input_pred, thresh):
     else:
         measure = lambda x, y: wup_measure(x, y, thresh)
 
-
-    if len(input_gt) ==0 or len(input_pred) == 0:
-        return  0
-
-    final_score_gt = 0
-    for word_gt in input_gt:
-        max_cur = 0
-        for word_pred in input_pred:
-            value = measure(word_gt,word_pred)
-            if value > max_cur:
-                max_cur = value
-        final_score_gt += max_cur
-    final_score_gt /= len(input_gt)
-
-    final_score_pred = 0
-    for word_pred in input_pred:
-        max_cur = 0
-        for word_gt in input_gt:
-            value = measure(word_gt,word_pred)
-            if value > max_cur:
-                max_cur = value
-        final_score_pred += max_cur
-
-    final_score_pred /= len(input_pred)
-    final_score = min(final_score_gt,final_score_pred)
-
-    # score_list = [measure(ta, pa) for (ta, pa) in zip(input_gt, input_pred)]
-    # final_score = sum(map(
-    #     lambda x: float(x) / float(len(score_list)), score_list))
+    # if thresh == -1:
+    #     print 'standard Accuracy is used'
+    # else:
+    #     print 'soft WUPS is used'
+    score_list = [measure(ta, pa) for (ta, pa) in zip(input_gt, input_pred)]
+    final_score = sum(map(
+        lambda x: float(x) / float(len(score_list)), score_list))
 
     # print 'final score:', final_score
     return final_score
 
 
 
-# print(compute_wups(['one','pig','<UNKNOWN>'],['one','apple','<UNKNOWN>'],0))
+# tt = compute_wups(['one'],['ten'],0)
+# print(tt)
+
+# print(compute_wups(['apple'],['pig'],0.9))

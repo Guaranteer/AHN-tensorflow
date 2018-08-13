@@ -312,3 +312,4 @@ def calculate_bleu(sen1, sen2):
     BLEU_4 += score_map['Bleu_4']
     return BLEU_1, BLEU_2, BLEU_3
 
+print(calculate_bleu('i love you','i love you'))
