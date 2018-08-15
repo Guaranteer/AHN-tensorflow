@@ -1,10 +1,11 @@
-from data_feed import Batcher
-import wups
+import sys
+sys.path.append("..")
+from qa_utils import bleu, wups, utils
+from dataloader.data_feed import Batcher
 import time
 import tensorflow as tf
 import numpy as np
 import os
-import utils
 import json
 
 class Trainer(object):

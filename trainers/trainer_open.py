@@ -1,20 +1,18 @@
-from data_feed_open import Batcher
-import wups
+import sys
+sys.path.append('..')
+from dataloader.data_feed_open import Batcher
+from qa_utils import wups,utils,bleu
 import time
 import tensorflow as tf
 import numpy as np
 import os
-import utils
 import json
-import cPickle as pkl
-import bleu
+import pickle as pkl
 
-with open('/home1/xsw/mm_2018/data/tsn_score/caption/worddict.pkl') as f1:
-    word2index = pkl.load(f1)
 
-index2word = dict()
-for key in word2index.keys():
-    index2word[word2index[key]] = key
+def load_file(filename):
+    with open(filename,'rb') as f1:
+        return pkl.load(f1)
 
 
 
@@ -24,6 +22,9 @@ class Trainer(object):
         self.model_params = model_params
         self.data_params = data_params
         self.model = model
+        self.index2word = load_file(self.data_params['index2word'])
+        #print(self.index2word)
+
 
     def train(self):
         # training
@@ -97,63 +98,62 @@ class Trainer(object):
             for img_frame_vecs, img_frame_n, ques_vecs, ques_n, ques_word, ans_vecs, ans_n, ans_word, type_vec, batch_size in self.train_batcher.generate():
                 if ans_vecs is None:
                     break
-                batch_data = {
-                    self.model.input_q: ques_vecs,
-                    self.model.y: ans_word
-                }
 
+                batch_data = dict()
+                # print(ans_word,ques_word)
+                batch_data[self.model.y] = ans_word
                 batch_data[self.model.input_x] = img_frame_vecs
                 batch_data[self.model.input_x_len] = img_frame_n
+                batch_data[self.model.input_q] = ques_vecs
                 batch_data[self.model.input_q_len] = ques_n
                 batch_data[self.model.ans_vec] = ans_vecs
                 batch_data[self.model.is_training] = True
                 batch_data[self.model.batch_size] = batch_size
 
                 mask_matrix = np.zeros([np.shape(ans_n)[0], self.data_params['max_n_a_words']], np.int32)
-                nonzeros = np.array(map(lambda x: (x != 0).sum(), ans_word))
                 for ind, row in enumerate(mask_matrix):
-                    row[:nonzeros[ind]] = 1
+                    row[:ans_n[ind]] = 1
                 batch_data[self.model.y_mask] = mask_matrix
 
-                _, train_loss, train_ans, learning_rate = sess.run([train_proc, self.model.train_loss, self.model.answer_word_train, learning_rates], \
+                train_ans, learning_rate = sess.run([self.model.answer_word_train, learning_rates], \
                                     feed_dict=batch_data)
                 train_ans = np.transpose(np.array(train_ans), (1,0))
 
                 # get word and calculate WUPS
+                reward = np.ones(len(ans_vecs), dtype=float)
                 for i in range(len(type_vec)):
                     type_count[type_vec[i]] += 1
-                    ground_a = ''
+                    ground_a = list()
                     for l in range(self.data_params['max_n_a_words']):
-                        word=ans_word[i][l]
-                        if word==1:
-                            ground_a = ground_a + 'EOS'
+                        word = ans_word[i][l]
+                        ground_a.append(self.index2word[word])
+                        if self.index2word[word] == 'EOS':
                             break
-                        word = index2word[word]
-                        ground_a = ground_a + word + ' '
-                    #print 'ground_a:    ', ground_a
-                    
-                    generated_sentence = ''
+                        
+
+
+                    generate_a = list()
                     for l in range(self.data_params['max_n_a_words']):
                         word=train_ans[i][l]
-                        if word==1:
-                            generated_sentence = generated_sentence + 'EOS'
+                        generate_a.append(self.index2word[word])
+                        if self.index2word[word] == 'EOS':
                             break
-                        word = index2word[word]
-                        generated_sentence = generated_sentence + word + ' '
-                    #print 'generated:    ', generated_sentence
+                        
 
-                    ground_a = ground_a.split()
-                    generate_a = generated_sentence.split()
 
-                    #print ground_a
-                    #print generate_a
 
                     wups_value = wups.compute_wups(ground_a, generate_a, 0.0)
                     wups_value2 = wups.compute_wups(ground_a, generate_a, 0.9)
-                    bleu1_value = bleu.calculate_bleu(' '.join(ground_a), generated_sentence)
+                    bleu1_value = wups.compute_wups(ground_a, generate_a, -1)
+                    # bleu1_value = bleu.calculate_bleu(' '.join(ground_a), ' '.join(generate_a))
                     wups_count[type_vec[i]] += wups_value
                     wups_count2[type_vec[i]] += wups_value2
                     bleu1_count[type_vec[i]] += bleu1_value
+
+                    reward[i] = wups_value2
+
+                batch_data[self.model.reward] = reward
+                _, train_loss = sess.run([train_proc, self.model.train_loss], feed_dict=batch_data)
 
 
                 # display batch info
@@ -162,11 +162,9 @@ class Trainer(object):
                 if i_batch % self.train_params['display_batch_interval'] == 0:
                     t2 = time.time()
                     print ('Epoch %d, Batch %d, loss = %.4f, %.3f seconds/batch' % (i_epoch, i_batch, train_loss, (t2-t1)/self.train_params['display_batch_interval']))
-                    #print train_ans
-                    #print [index2word[i] for i in train_ans[0]]
                     print('learning_rate: ', learning_rate)
                     print('ground_a:    ', ground_a)
-                    print('generated:    ', generated_sentence)
+                    print('generated:    ', generate_a)
                     print('wups_value:  ', wups_value)
                     print('wups_value2: ', wups_value2)
                     print('Bleu1 value: ', bleu1_value)
@@ -202,7 +200,6 @@ class Trainer(object):
                 print ('****************************')
                 print ('Epoch %d ends. Average loss %.3f. %.3f seconds/epoch' % (i_epoch, avg_batch_loss, t_end-t_begin))
                 valid_acc = self._evaluate(sess, self.model, self.valid_batcher)
-                test_acc = self._evaluate(sess, self.model, self.test_batcher)
                 print ('****************************')
 
             # save model and early stop
@@ -231,6 +228,7 @@ class Trainer(object):
         for img_frame_vecs, img_frame_n, ques_vecs, ques_n, ques_word, ans_vecs, ans_n, ans_word, type_vec, batch_size in batcher.generate():
             if ans_vecs is None:
                 break
+
             batch_data = {
                 model.input_q: ques_vecs,
                 model.y: ans_word,
@@ -243,41 +241,36 @@ class Trainer(object):
             }
 
             mask_matrix = np.zeros([np.shape(ans_n)[0], self.data_params['max_n_a_words']], np.int32)
-            nonzeros = np.array(map(lambda x: (x != 0).sum(), ans_word))
             for ind, row in enumerate(mask_matrix):
-                row[:nonzeros[ind]] = 1
+                row[:ans_n[ind]] = 1
             batch_data[model.y_mask] = mask_matrix
 
-            test_loss, test_ans = sess.run([self.model.test_loss, self.model.answer_word_test], feed_dict=batch_data)
+            test_ans = sess.run(self.model.answer_word_test, feed_dict=batch_data)
             test_ans = np.transpose(np.array(test_ans), (1,0))
 
-            # get word and calculate WUPS
             for i in range(len(type_vec)):
                 type_count[type_vec[i]] += 1
-                ground_a = ''
+                ground_a = list()
                 for l in range(self.data_params['max_n_a_words']):
-                    word=ans_word[i][l]
-                    if word==1:
-                        ground_a = ground_a + 'EOS'
+                    word = ans_word[i][l]
+                    ground_a.append(self.index2word[word])
+                    if self.index2word[word] == 'EOS':
                         break
-                    word = index2word[word]
-                    ground_a = ground_a + word + ' '
-                
-                generated_sentence = ''
-                for l in range(self.data_params['max_n_a_words']):
-                    word=test_ans[i][l]
-                    if word==1:
-                        generated_sentence = generated_sentence + 'EOS'
-                        break
-                    word = index2word[word]
-                    generated_sentence = generated_sentence + word + ' '
+                    
 
-                ground_a = ground_a.split()
-                generate_a = generated_sentence.split()
+
+                generate_a = list()
+                for l in range(self.data_params['max_n_a_words']):
+                    word = test_ans[i][l]
+                    generate_a.append(self.index2word[word])
+                    if self.index2word[word] == 'EOS':
+                        break
+                    
 
                 wups_value = wups.compute_wups(ground_a, generate_a, 0.0)
                 wups_value2 = wups.compute_wups(ground_a, generate_a, 0.9)
-                bleu1_value = bleu.calculate_bleu(' '.join(ground_a), generated_sentence)
+                bleu1_value = wups.compute_wups(ground_a, generate_a, -1)
+                # bleu1_value = bleu.calculate_bleu(' '.join(ground_a), ' '.join(generate_a))
                 wups_count[type_vec[i]] += wups_value
                 wups_count2[type_vec[i]] += wups_value2
                 bleu1_count[type_vec[i]] += bleu1_value
@@ -303,8 +296,6 @@ class Trainer(object):
         return wup_acc2
 
     def _test(self, sess):
-        #print ('Train set:')
-        #train_acc = self._evaluate(sess, self.model, self.train_batcher)
         print ('Validation set:')
         valid_acc = self._evaluate(sess, self.model, self.valid_batcher)
         print ('Test set:')

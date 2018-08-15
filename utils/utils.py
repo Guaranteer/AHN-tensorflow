@@ -1,7 +1,5 @@
-import sys
-sys.path.append("..")
 import tensorflow as tf
-from qa_utils.default_dict import DefaultDict
+from default_dict import DefaultDict
 
 def fill_default_dict(train_params, model_params, data_params):
     # automatically fill default values for old programs

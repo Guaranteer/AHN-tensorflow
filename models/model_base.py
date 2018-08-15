@@ -1,9 +1,7 @@
 import sys
-
-sys.path.append('./qa_utils/')
+sys.path.append("..")
 import tensorflow as tf
-import layers
-import random
+import qa_utils.layers as layers
 
 
 class Model(object):
@@ -104,7 +102,7 @@ class Model(object):
                                                                                           self.attention_dim,
                                                                                           'v_second_attention')
 
-        concat_output = tf.concat([q_last_state, v_first_attention_output], axis=1)
+        concat_output = tf.concat([q_last_state, v_first_attention_output, v_second_attention_output], axis=1)
         self.output = layers.linear_layer(concat_output, self.n_classes, 'linear')
 
         # sparse softmax for one-class label with regularization

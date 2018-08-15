@@ -1,9 +1,7 @@
 import sys
-
-sys.path.append('./qa_utils/')
+sys.path.append("..")
 import tensorflow as tf
-import layers
-import random
+import qa_utils.layers as layers
 
 
 class Model(object):

@@ -1,7 +1,7 @@
 import sys
-sys.path.append('./qa_utils/')
-from model_base import Model
-from trainer_base import Trainer
+sys.path.append('..')
+from models.model_base import Model
+from trainers.trainer_base import Trainer
 
 train_params = {
     'learning_rate': 1e-4,
@@ -9,8 +9,8 @@ train_params = {
     'lr_decay_rate': 0.8,
     'max_epoches': 1000,
     'early_stopping': 10,
-    'cache_dir': './results/base2',
-    'summary_dir': './summary_vqa/model5',
+    'cache_dir': '../results/',
+    'summary_dir': '../summaries/',
     'display_batch_interval': 20,
     'summary_interval': 10,
     'evaluate_interval': 5,
@@ -19,8 +19,8 @@ train_params = {
 }
 
 model_params = {
-    'lstm_dim': 1024,
-    'second_lstm_dim': 1024,
+    'lstm_dim': 384,
+    'second_lstm_dim': 384,
     'attention_dim': 256,
     'regularization_beta': 1e-7,
     'dropout_prob': 0.6
@@ -36,14 +36,14 @@ data_params = {
     'input_ques_dim': 300,
     'ref_dim':300,
 
-    'word2vec': './word2vec/word2vec.bin',
-    'database':'./caption/actNet200-V1-3.pkl',
-    'question':'./qg/question.json',
-    'answer':'./qg/answer.json',
-    'real_train_proposals':'./captions/train.json',
-    'real_val_proposals':'./captions/val_1.json',
-    'real_test_proposals': './captions/val_2.json',
-    'feature_path':'./tsn_score/'
+    'word2vec': '../../data/word2vec/word2vec.bin',
+    'database':'../data/actNet200-V1-3.pkl',
+    'question':'../data/question.json',
+    'answer':'../data/answer.json',
+    'real_train_proposals':'../data/train.json',
+    'real_val_proposals':'../data/val_1.json',
+    'real_test_proposals': '../data/val_2.json',
+    'feature_path':'../../data/tsn_score/'
 }
 
 if __name__ == '__main__':

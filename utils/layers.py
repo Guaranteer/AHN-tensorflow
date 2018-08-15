@@ -1,9 +1,7 @@
-import sys
-sys.path.append("..")
 import pickle as pkl
 import tensorflow as tf
 import numpy
-import qa_utils.utils as utils
+import utils
 
 
 def linear_layer(input_ts, output_dim, scope_name):
