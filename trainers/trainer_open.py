@@ -38,6 +38,7 @@ class Trainer(object):
             print('create path: ', self.model_path)
             os.makedirs(self.model_path)
 
+
         self.last_checkpoint = None
 
         # main procedure including training & testing
@@ -68,6 +69,7 @@ class Trainer(object):
         # training
         init_proc = tf.global_variables_initializer()
         sess.run(init_proc)
+        # self.model_saver.restore(sess, '../results/0817221611-2670')
         best_epoch_acc = 0
         best_epoch_id = 0
 
@@ -138,7 +140,14 @@ class Trainer(object):
                         generate_a.append(self.index2word[word])
                         if self.index2word[word] == 'EOS':
                             break
-                        
+
+
+                    question = list()
+                    for l in range(self.data_params['max_n_q_words']):
+                        word = ques_word[i][l]
+                        question.append(self.index2word[word])
+                        if self.index2word[word] == '<PAD>':
+                            break
 
 
 
@@ -163,6 +172,7 @@ class Trainer(object):
                     t2 = time.time()
                     print ('Epoch %d, Batch %d, loss = %.4f, %.3f seconds/batch' % (i_epoch, i_batch, train_loss, (t2-t1)/self.train_params['display_batch_interval']))
                     print('learning_rate: ', learning_rate)
+                    print('question:    ', question)
                     print('ground_a:    ', ground_a)
                     print('generated:    ', generate_a)
                     print('wups_value:  ', wups_value)
@@ -211,6 +221,9 @@ class Trainer(object):
                 self.last_checkpoint = self.model_saver.save(sess, self.model_path+timestamp, global_step=global_step)
                 print ('Saved at', self.last_checkpoint)
             else:
+                # timestamp = time.strftime("%m%d%H%M%S", time.localtime())
+                # self.last_checkpoint = self.model_saver.save(sess, self.model_path + timestamp, global_step=global_step)
+                # print('Saved at', self.last_checkpoint)
                 if i_epoch-best_epoch_id >= self.train_params['early_stopping']:
                     print ('Early stopped. Best loss %.3f at epoch %d' % (best_epoch_acc, best_epoch_id))
                     break
